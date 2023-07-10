@@ -1,6 +1,7 @@
 import socket
 import datetime
 import sys
+import os
 
 # Function to handle client requests
 def handle_client(client_socket):
@@ -20,7 +21,7 @@ def handle_client(client_socket):
     client_socket.close()
 
 # Server configuration
-host = 'l92.168.243.128'
+host = 'localhost'
 port = 8484
 
 # Create a TCP socket
@@ -39,8 +40,16 @@ try:
         client_socket, addr = server_socket.accept()
         print(f"Accepted connection from {addr[0]}:{addr[1]}")
 
-        # Handle the client request in a separate process/thread
-        handle_client(client_socket)
+        # Fork a child process to handle the client request
+        pid = os.fork()
+        if pid == 0:
+            # Child process
+            server_socket.close()  # Close the server socket in the child process
+            handle_client(client_socket)
+            sys.exit(0)
+        else:
+            # Parent process
+            client_socket.close()  # Close the client socket in the parent process
 except KeyboardInterrupt:
     # Close the server socket on keyboard interrupt
     server_socket.close()
